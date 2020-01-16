@@ -1,18 +1,17 @@
 import json
 import string
 import os
-w, h = 8, 364;
-Matrix = [[0 for x in range(w)] for y in range(h)]
+import sys
+import glob
 
-x,y = 111, 365;
-training_array = [[0 for x in range(x)] for y in range(y)]
+cwd = os.getcwd()
 
-def findTeamAndReplaceWithBinaryCode(team, teamsArray):
+def findTeamAndReplaceWithBinaryCode(team, teamsArray, league):
     teamIndex = teamsArray.index(team)
-    #6bytu pro championship
-    result = '{0:06b}'.format(teamIndex)
-    #ostatni
-    #result = '{0:05b}'.format(teamIndex)
+    if (league == "Championship"):
+        result = '{0:06b}'.format(teamIndex)
+    else:
+        result = '{0:05b}'.format(teamIndex)
     return result
 
 def dayConversion(day):
@@ -71,7 +70,7 @@ def replaceScore(teamGoals):
 
     
 def replacesScoreWithBinary(match, outputType, modelType):
-    print(str(match[3]) + ":" + str(match[4]))
+    #print(str(match[3]) + ":" + str(match[4]))
     result = []
     if outputType == "scoreFT_v2":
         homeTeamFT = round(int(match[3])/10, 2)
@@ -83,9 +82,9 @@ def replacesScoreWithBinary(match, outputType, modelType):
         awayTeamFT = replaceScore(int(match[4]))
         homeTeamHT = replaceScore(int(match[6]))
         awayTeamHT = replaceScore(int(match[7]))
-    print(homeTeamFT)
-    print(awayTeamFT)
-    print("--")
+    #print(homeTeamFT)
+    #print(awayTeamFT)
+    #print("--")
     resultFT = replaceResultWithBinary(match[5], modelType)
     resultHT = replaceResultWithBinary(match[8], modelType)
     
@@ -153,7 +152,7 @@ def replacesScoreWithBinary(match, outputType, modelType):
         for x in awayTeamHT:
             result.append(int(x))
         result.append(resultHT)
-    print(result)
+    #print(result)
     return result
 
 def replacesScoreWithBinaryV2(match, outputType):
@@ -184,14 +183,14 @@ def replacesScoreWithBinaryV2(match, outputType):
         result.append(resultFT)
         result.append(homeTeamHT)
         result.append(awayTeamHT)
-    print(result)
+    #print(result)
     return result
 
-def getMatchDataInput(match, teamsArray):
+def getMatchDataInput(match, teamsArray, league):
     result = []
     date = replaceDateWithBinaryCode(match[0])
-    homeTeam = findTeamAndReplaceWithBinaryCode(match[1], teamsArray)
-    awayTeam = findTeamAndReplaceWithBinaryCode(match[2], teamsArray)
+    homeTeam = findTeamAndReplaceWithBinaryCode(match[1], teamsArray, league)
+    awayTeam = findTeamAndReplaceWithBinaryCode(match[2], teamsArray, league)
     for x in date:
         result.append(int(x))
     for x in homeTeam:
@@ -200,9 +199,9 @@ def getMatchDataInput(match, teamsArray):
         result.append(int(x))
     return result
 
-def getMatchWholeData(match, teamsArray, outputType, modelType):
+def getMatchWholeData(match, teamsArray, outputType, modelType, league):
     result = []
-    input = getMatchDataInput(match, teamsArray)
+    input = getMatchDataInput(match, teamsArray, league)
     output = replacesScoreWithBinary(match, outputType, modelType)
     for x in input:
         result.append(x)
@@ -217,23 +216,23 @@ def createAllTrainingData(newDataset, teams, league):
     for modelType in ["softmax"]:
         for outputType in datasetTypes:
                 for x in newDataset:
-                    finalDataset.append(getMatchWholeData(x, teams, outputType, modelType))
+                    finalDataset.append(getMatchWholeData(x, teams, outputType, modelType, league))
 
                 reverseFinalDataset = []
                 length = len(finalDataset)
-                print(length)
+                #print(length)
 
                 for i in range(0, length,1):
                     reverseFinalDataset.append(finalDataset[length - 1 - i])
     
-                new_file_first = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + str(league)+ ".txt", "w")
-                print(len(reverseFinalDataset))
+                new_file_first = open(cwd + "/Football/Leagues/" + str(league) + "/" + str(league)+ ".txt", "w")
+                #print(len(reverseFinalDataset))
                 for item in reverseFinalDataset:
                     new_file_first.write("%s\n" % item)
                 new_file_first.close()
 
-                f1 = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + str(league) + ".txt", 'r')
-                f2 = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + str(league) + "_" + str(outputType) + "_" + str(modelType) + ".txt", 'w')
+                f1 = open(cwd + "/Football/Leagues/" + str(league) + "/" + str(league) + ".txt", 'r')
+                f2 = open(cwd + "/Football/Leagues/" + str(league) + "/" + str(league) + "_" + str(outputType) + "_" + str(modelType) + ".txt", 'w')
                 for line in f1:
                     f2.write(line.replace("[", "").replace("]",""))
                 f1.close()
@@ -243,7 +242,7 @@ def createAllTrainingData(newDataset, teams, league):
 def createDatasetForPrediction(teams, league, fromLeagueRound, toLeagueRound):
     for y in range(fromLeagueRound, toLeagueRound):    
         A = []
-        file = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + league + "_upcomingMatches.csv", "r")
+        file = open(cwd + "/Football/Leagues/" + str(league) + "/" + league + "_upcomingMatches.csv", "r")
         for line in file:
             line = line.replace('\n', '')
             A.append(line)
@@ -256,22 +255,22 @@ def createDatasetForPrediction(teams, league, fromLeagueRound, toLeagueRound):
                 for x in data:
                     line.append(x)
                 date = replaceDateWithBinaryCode(line[1])
-                homeTeam = findTeamAndReplaceWithBinaryCode(line[2], teams)
-                awayTeam = findTeamAndReplaceWithBinaryCode(line[3], teams)
+                homeTeam = findTeamAndReplaceWithBinaryCode(line[2], teams, league)
+                awayTeam = findTeamAndReplaceWithBinaryCode(line[3], teams, league)
                 for x in date:
                     newLine.append(int(x))
                 for x in homeTeam:
                     newLine.append(int(x))
                 for x in awayTeam:
                     newLine.append(int(x))
-                print(newLine)
-                f1 = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + league + "_" + "predictionDataset_" + str(y) + ".txt", "a")
+                #print(newLine)
+                f1 = open(cwd + "/Football/Leagues/" + str(league) + "/" + league + "_" + "predictionDataset_" + str(y) + ".txt", "a")
                 f1.write(str(newLine).replace("[", "").replace("]","") + '\n')
                 f1.close()
                 
 def createDatasetForPredictionAccuracy(teams, league):  
     A = []
-    file = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + league + "_dataForResultsAcc.csv", "r")
+    file = open(cwd + "/Football/Leagues/" + str(league) + "/" + league + "_dataForResultsAcc.csv", "r")
     for line in file:
         line = line.replace('\n', '')
         A.append(line)
@@ -283,23 +282,23 @@ def createDatasetForPredictionAccuracy(teams, league):
         for x in data:
             line.append(x)
         date = replaceDateWithBinaryCode(line[0])
-        homeTeam = findTeamAndReplaceWithBinaryCode(line[1], teams)
-        awayTeam = findTeamAndReplaceWithBinaryCode(line[2], teams)
+        homeTeam = findTeamAndReplaceWithBinaryCode(line[1], teams, league)
+        awayTeam = findTeamAndReplaceWithBinaryCode(line[2], teams, league)
         for x in date:
             newLine.append(int(x))
         for x in homeTeam:
             newLine.append(int(x))
         for x in awayTeam:
             newLine.append(int(x))
-        print(newLine)
-        f1 = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + league + "_" + "predictionAccuracyDataset" + ".txt", "a")
+        #print(newLine)
+        f1 = open(cwd + "/Football/Leagues/" + str(league) + "/" + league + "_" + "predictionAccuracyDataset" + ".txt", "a")
         f1.write(str(newLine).replace("[", "").replace("]","") + '\n')
         f1.close()            
             
 
 def createDatasetAndTeams(league):
     A = []
-    file = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + str(league) + ".csv", "r")
+    file = open(cwd + "/Football/Leagues/" + str(league) + "/" + str(league) + ".csv", "r")
     for line in file:
         line = line.replace('\n', '')
         A.append(line)
@@ -331,22 +330,37 @@ def createDatasetAndTeams(league):
                     teams.append(line[y])
             newLine.append(line[y])
         newDataset.append(newLine)
-    file_teams = open(os.getcwd() + "/Football/Leagues/" + str(league) + "/" + league + "_teams.txt", "w")
+    file_teams = open(cwd + "/Football/Leagues/" + str(league) + "/" + league + "_teams.txt", "w")
     
     for i in range (len(teams)):
-        print(teams[i])
+        #print(teams[i])
         file_teams.write(teams[i] + "\n")
-    print(len(teams))
+    #print(len(teams))
     createAllTrainingData(newDataset, teams, league)
     #number is league round
     createDatasetForPrediction(teams, league, 7, 20)
     createDatasetForPredictionAccuracy(teams, league)
 
+def deleteAllFiles():
+    fileList = glob.glob(cwd + "\Football\Leagues\*\*.txt", recursive=True)
+    for filePath in fileList:
+        #print(filePath)
+        try:
+            os.remove(filePath)
+        except OSError:
+            print("Error while deleting file")
+    print("All files deleted.")
+
 def main():
-    leagues = ["Championship"]
-    for league in leagues:
-        createDatasetAndTeams(league)
+    if (sys.argv[1] == "delete"):
+        # delete all old files
+        deleteAllFiles()
+    elif (sys.argv[1] == "create"):
+        # create new files
+        leagues = ["Bundesliga", "Championship", "LaLigue", "PremierLeague"]
+        for league in leagues:
+            createDatasetAndTeams(league)
+        print("Datasets created.")
 
-main()
-
-    
+if __name__ == "__main__":
+    main()
